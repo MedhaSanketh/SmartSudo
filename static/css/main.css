@@ -85,9 +85,53 @@
     margin: 0 auto;
 }
 
+/* Visualization styling */
+#visualization-board {
+    max-width: 450px;
+}
+
+/* Visualization cell styles */
+.viz-cell {
+    transition: all 0.2s ease-in-out;
+}
+
+.viz-cell.active {
+    background-color: var(--bs-secondary-bg-subtle);
+}
+
+.viz-cell.decision {
+    background-color: var(--bs-success-bg-subtle);
+    color: var(--bs-success);
+}
+
+.viz-cell.backtrack {
+    background-color: var(--bs-danger-bg-subtle);
+    color: var(--bs-danger);
+}
+
+/* Decision tree styling */
+.tree-node {
+    list-style-type: none;
+    margin-left: 1rem;
+    padding-left: 1rem;
+    border-left: 1px solid var(--bs-secondary);
+}
+
+.tree-node li {
+    margin-bottom: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
 /* Responsive adjustments */
+@media (max-width: 992px) {
+    #visualization-board {
+        max-width: 350px;
+    }
+}
+
 @media (max-width: 576px) {
-    .sudoku-cell {
+    .sudoku-cell, .viz-cell {
         font-size: 1rem;
     }
     
@@ -98,5 +142,9 @@
     
     .game-controls .btn {
         width: 100%;
+    }
+    
+    #visualization-board {
+        max-width: 100%;
     }
 }

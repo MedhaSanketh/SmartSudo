@@ -1,5 +1,6 @@
 // Global variables to store the game state
 let currentPuzzle = [];
+let originalPuzzle = []; // Store the original puzzle for AI hints
 let currentSolution = [];
 let selectedCell = null;
 let currentDifficulty = 'medium';
@@ -10,12 +11,16 @@ const gameBoard = document.getElementById('game-board');
 const numberButtons = document.querySelectorAll('.number-btn');
 const eraseButton = document.getElementById('erase-btn');
 const newGameButton = document.getElementById('new-game-btn');
-const hintButton = document.getElementById('hint-btn');
+const aiHintButton = document.getElementById('ai-hint-btn');
+const solutionHintButton = document.getElementById('solution-hint-btn');
 const checkButton = document.getElementById('check-btn');
 const difficultyOptions = document.querySelectorAll('.difficulty-option');
 const currentDifficultyElement = document.getElementById('current-difficulty');
 const gameCompletedModal = new bootstrap.Modal(document.getElementById('gameCompletedModal'));
 const newGameAfterWinButton = document.getElementById('newGameAfterWin');
+const hintDisplay = document.getElementById('hint-display');
+const hintMessage = document.getElementById('hint-message');
+const hintTechnique = document.getElementById('hint-technique');
 
 // Initialize the game
 document.addEventListener('DOMContentLoaded', () => {
@@ -50,7 +55,10 @@ function fetchNewPuzzle() {
         .then(response => response.json())
         .then(data => {
             currentPuzzle = data.puzzle;
+            // Make a deep copy of the original puzzle for AI hints
+            originalPuzzle = JSON.parse(JSON.stringify(data.puzzle));
             currentSolution = data.solution;
+            currentDifficulty = data.difficulty;
             renderPuzzle();
             fixedCells = [];
             
@@ -62,6 +70,9 @@ function fetchNewPuzzle() {
                     }
                 }
             }
+            
+            // Hide hint display when starting a new puzzle
+            hideHintDisplay();
         })
         .catch(error => console.error('Error fetching puzzle:', error));
 }
@@ -224,22 +235,89 @@ function isValidMove(row, col, number) {
     return true;
 }
 
-// Get a hint from the server
-function getHint() {
+// Get an AI-powered hint from the server
+function getAIHint() {
+    // Show a loading indicator in the hint display
+    showHintDisplay();
+    hintMessage.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generating AI hint...';
+    hintTechnique.textContent = '';
+    
     fetch('/get_hint', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+            original_puzzle: originalPuzzle,
             puzzle: currentPuzzle,
-            solution: currentSolution
+            solution: currentSolution,
+            difficulty: currentDifficulty,
+            hint_type: 'ai'
         }),
     })
     .then(response => response.json())
     .then(data => {
-        if (data.status === 'complete') {
-            alert('Puzzle is already complete!');
+        if (data.hint_type === 'complete') {
+            hintMessage.textContent = data.message;
+            hintTechnique.textContent = '';
+            return;
+        }
+        
+        // Display the AI hint message
+        hintMessage.textContent = data.message;
+        
+        // Show the technique used (if available)
+        if (data.technique) {
+            hintTechnique.textContent = `Technique: ${data.technique}`;
+        } else {
+            hintTechnique.textContent = '';
+        }
+        
+        // If the hint includes row/col coordinates, highlight that cell
+        if (data.row !== undefined && data.col !== undefined) {
+            const cell = document.querySelector(`.sudoku-cell[data-row="${data.row}"][data-col="${data.col}"]`);
+            if (cell) {
+                // Highlight the cell
+                cell.classList.add('hint');
+                
+                // Select the cell
+                selectCell(cell);
+                
+                // Remove the hint class after 5 seconds
+                setTimeout(() => {
+                    cell.classList.remove('hint');
+                }, 5000);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error getting AI hint:', error);
+        hintMessage.textContent = "Sorry, couldn't generate a hint. Please try again.";
+        hintTechnique.textContent = '';
+    });
+}
+
+// Get a solution hint from the server (original hint behavior)
+function getSolutionHint() {
+    fetch('/get_hint', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            original_puzzle: originalPuzzle,
+            puzzle: currentPuzzle,
+            solution: currentSolution,
+            difficulty: currentDifficulty,
+            hint_type: 'solution'
+        }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.hint_type === 'complete') {
+            showHintDisplay();
+            hintMessage.textContent = data.message;
+            hintTechnique.textContent = '';
             return;
         }
         
@@ -254,6 +332,11 @@ function getHint() {
         // Select the cell
         selectCell(cell);
         
+        // Show hint message
+        showHintDisplay();
+        hintMessage.textContent = data.message || `The correct number for this cell is ${data.value}.`;
+        hintTechnique.textContent = '';
+        
         // Check if the puzzle is complete
         checkPuzzleCompletion();
         
@@ -262,7 +345,22 @@ function getHint() {
             cell.classList.remove('hint');
         }, 3000);
     })
-    .catch(error => console.error('Error getting hint:', error));
+    .catch(error => {
+        console.error('Error getting solution hint:', error);
+        showHintDisplay();
+        hintMessage.textContent = "Sorry, couldn't generate a hint. Please try again.";
+        hintTechnique.textContent = '';
+    });
+}
+
+// Show the hint display panel
+function showHintDisplay() {
+    hintDisplay.classList.remove('d-none');
+}
+
+// Hide the hint display panel
+function hideHintDisplay() {
+    hintDisplay.classList.add('d-none');
 }
 
 // Check if the puzzle is valid and complete
@@ -324,8 +422,17 @@ function setupEventListeners() {
         fetchNewPuzzle();
     });
     
-    // Hint button event listener
-    hintButton.addEventListener('click', getHint);
+    // AI hint button event listener
+    aiHintButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        getAIHint();
+    });
+    
+    // Solution hint button event listener
+    solutionHintButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        getSolutionHint();
+    });
     
     // Check button event listener
     checkButton.addEventListener('click', checkPuzzleCompletion);

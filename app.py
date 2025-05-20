@@ -88,8 +88,8 @@ def validate():
 @app.route('/visualize_backtracking', methods=['POST'])
 def visualize_backtracking():
     """Generate backtracking visualization data for the current puzzle."""
-    data = request.json
-    puzzle = data.get('puzzle', [])
+    data = request.json if request.json else {}
+    puzzle = data.get('puzzle', []) if data else []
     
     try:
         # Get visualization data

@@ -1,4 +1,12 @@
-/* Sudoku board styling */
+/* SmartSudo Game Styling */
+:root {
+    --smartsudo-primary: #3a86ff;
+    --smartsudo-secondary: #8338ec;
+    --smartsudo-accent: #ff006e;
+    --smartsudo-highlight: #ffbe0b;
+}
+
+/* Sudoku board styling with gradient border */
 .sudoku-board {
     display: grid;
     grid-template-columns: repeat(9, 1fr);
@@ -6,11 +14,25 @@
     max-width: 540px;
     margin: 0 auto;
     background-color: var(--bs-secondary);
-    padding: 2px;
-    border-radius: 4px;
+    padding: 3px;
+    border-radius: 8px;
+    position: relative;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
-/* Individual cell styling */
+.sudoku-board::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, var(--smartsudo-primary), var(--smartsudo-secondary), var(--smartsudo-accent));
+    border-radius: 10px;
+    z-index: -1;
+}
+
+/* Individual cell styling with modern look */
 .sudoku-cell {
     width: 100%;
     aspect-ratio: 1/1;
@@ -23,6 +45,14 @@
     cursor: pointer;
     position: relative;
     user-select: none;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    margin: 1px;
+}
+
+.sudoku-cell:hover:not(.fixed) {
+    background-color: rgba(58, 134, 255, 0.15);
+    transform: scale(1.02);
 }
 
 /* Border styling for 3x3 boxes */
@@ -67,10 +97,12 @@
     color: var(--bs-danger);
 }
 
-/* Cell with a hint */
+/* Cell with a hint - enhanced animation */
 .hint {
     animation: pulsate 1.5s infinite;
-    color: var(--bs-info);
+    color: var(--smartsudo-highlight) !important;
+    box-shadow: 0 0 15px rgba(255, 190, 11, 0.6);
+    z-index: 2;
 }
 
 @keyframes pulsate {
@@ -79,10 +111,65 @@
     100% { transform: scale(1); }
 }
 
-/* Number pad styling */
+/* Glowing effect for hint box */
+.hint-glow {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, var(--smartsudo-secondary), transparent 70%);
+    opacity: 0.15;
+    top: -30px;
+    right: -30px;
+    border-radius: 50%;
+}
+
+/* Number pad styling - enhanced with gradient buttons */
 .number-pad {
     max-width: 540px;
     margin: 0 auto;
+}
+
+.number-btn {
+    transition: all 0.3s ease;
+    border: none;
+    font-weight: bold;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(145deg, var(--bs-dark), #1a1e23);
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+}
+
+.number-btn:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(145deg, var(--smartsudo-primary), var(--smartsudo-secondary));
+    color: white;
+}
+
+.number-btn:active {
+    transform: translateY(1px);
+}
+
+/* Game controls styling */
+.game-controls .btn {
+    border: none;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+}
+
+.game-controls .btn:hover {
+    transform: translateY(-2px);
+}
+
+.game-controls .btn-primary {
+    background: linear-gradient(to right, var(--smartsudo-primary), var(--bs-primary));
+}
+
+.game-controls .btn-info {
+    background: linear-gradient(to right, var(--smartsudo-secondary), var(--bs-info));
+}
+
+.game-controls .btn-success {
+    background: linear-gradient(to right, #38b000, var(--bs-success));
 }
 
 /* Visualization styling */

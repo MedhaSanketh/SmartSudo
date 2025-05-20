@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sudoku Game with AI and Visualization</title>
+    <title>SmartSudo - AI-Powered Sudoku Game</title>
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
     <!-- Font Awesome -->
@@ -18,7 +18,7 @@
             <div class="col-lg-6">
                 <div class="card shadow-sm mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h1 class="h4 mb-0">Sudoku Game</h1>
+                        <h1 class="h4 mb-0"><i class="fas fa-brain text-info me-2"></i>SmartSudo</h1>
                         <div class="dropdown">
                             <button class="btn btn-secondary dropdown-toggle" type="button" id="difficultyDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                                 Difficulty: <span id="current-difficulty">Medium</span>
@@ -87,8 +87,9 @@
                         
                         <!-- AI Hint Display -->
                         <div id="hint-display" class="mt-3 d-none">
-                            <div class="alert alert-info">
-                                <h5 class="alert-heading">Hint:</h5>
+                            <div class="alert alert-info position-relative overflow-hidden">
+                                <div class="hint-glow"></div>
+                                <h5 class="alert-heading"><i class="fas fa-lightbulb me-2"></i>Smart Hint:</h5>
                                 <p id="hint-message"></p>
                                 <div id="hint-technique" class="small text-end fst-italic"></div>
                             </div>
@@ -118,7 +119,7 @@
             <div class="col-lg-6">
                 <div class="card shadow-sm mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h2 class="h4 mb-0">Algorithm Visualization</h2>
+                        <h2 class="h4 mb-0"><i class="fas fa-code-branch text-warning me-2"></i>Algorithm Visualization</h2>
                         <div>
                             <button id="visualize-btn" class="btn btn-secondary">Visualize Backtracking</button>
                         </div>

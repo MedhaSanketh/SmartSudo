@@ -199,20 +199,32 @@
         </div>
     </div>
     
-    <!-- Game completed modal -->
+    <!-- Game completed modal with celebration effects -->
     <div class="modal fade" id="gameCompletedModal" tabindex="-1" aria-labelledby="gameCompletedModalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <div class="modal-content">
+            <div class="modal-content celebration-bg">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="gameCompletedModalLabel">Congratulations!</h5>
+                    <h5 class="modal-title" id="gameCompletedModalLabel">
+                        <i class="fas fa-trophy text-warning me-2"></i>Congratulations!
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <p>You've successfully completed the Sudoku puzzle!</p>
+                <div class="modal-body text-center">
+                    <div class="celebration-icon mb-3">
+                        <i class="fas fa-star fa-3x text-warning"></i>
+                    </div>
+                    <h4>Puzzle Solved!</h4>
+                    <p>You've successfully completed the SmartSudo puzzle!</p>
+                    <div class="difficulty-badge my-2">
+                        <span class="badge bg-info"><span id="completed-difficulty">Medium</span> Level</span>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" id="newGameAfterWin">New Game</button>
+                    <button type="button" class="btn btn-success" id="shareResultBtn">
+                        <i class="fas fa-share-alt me-1"></i>Share
+                    </button>
                 </div>
             </div>
         </div>

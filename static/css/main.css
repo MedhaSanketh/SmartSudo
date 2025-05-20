@@ -177,6 +177,59 @@
     max-width: 450px;
 }
 
+/* Celebration effects for win modal */
+.celebration-bg {
+    position: relative;
+    overflow: hidden;
+}
+
+.celebration-bg::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(58, 134, 255, 0.05), rgba(131, 56, 236, 0.05));
+    z-index: -1;
+}
+
+.celebration-icon {
+    position: relative;
+    display: inline-block;
+    animation: spin-and-scale 2s infinite alternate;
+}
+
+@keyframes spin-and-scale {
+    0% {
+        transform: scale(1) rotate(-10deg);
+    }
+    100% {
+        transform: scale(1.2) rotate(10deg);
+    }
+}
+
+/* Add some confetti particles for the win screen */
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: var(--smartsudo-highlight);
+    opacity: 0.8;
+    animation: confetti-fall 5s linear infinite;
+}
+
+@keyframes confetti-fall {
+    0% {
+        transform: translateY(-100px) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(500px) rotate(360deg);
+        opacity: 0;
+    }
+}
+
 /* Visualization cell styles */
 .viz-cell {
     transition: all 0.2s ease-in-out;

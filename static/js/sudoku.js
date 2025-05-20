@@ -379,18 +379,103 @@ function checkPuzzleCompletion() {
     .then(data => {
         if (data.valid) {
             if (data.complete) {
+                // Update the completed difficulty in the modal
+                document.getElementById('completed-difficulty').textContent = capitalizeFirstLetter(currentDifficulty);
+                
+                // Create confetti celebration effect
+                createConfetti();
+                
                 // Puzzle is complete and valid
                 gameCompletedModal.show();
             } else {
                 // Puzzle is valid but not complete
-                alert('So far, so good! Keep going!');
+                showMessage('success', 'So far, so good! Keep going!');
             }
         } else {
             // Puzzle has errors
-            alert('There are some errors in your puzzle. Please check again.');
+            showMessage('danger', 'There are some errors in your puzzle. Please check again.');
         }
     })
     .catch(error => console.error('Error validating puzzle:', error));
+}
+
+// Show a toast message
+function showMessage(type, message) {
+    // Create a toast element
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type} border-0 position-fixed bottom-0 end-0 m-3`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    `;
+    
+    // Add to document
+    document.body.appendChild(toast);
+    
+    // Initialize and show the toast
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    // Remove after it's hidden
+    toast.addEventListener('hidden.bs.toast', function() {
+        toast.remove();
+    });
+}
+
+// Create confetti celebration effect
+function createConfetti() {
+    const colors = [
+        'var(--smartsudo-primary)',
+        'var(--smartsudo-secondary)',
+        'var(--smartsudo-accent)',
+        'var(--smartsudo-highlight)'
+    ];
+    
+    // Create 50 confetti particles
+    for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = `${Math.random() * 100}%`;
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.width = `${5 + Math.random() * 10}px`;
+        confetti.style.height = `${5 + Math.random() * 10}px`;
+        confetti.style.opacity = Math.random();
+        confetti.style.animationDuration = `${3 + Math.random() * 5}s`;
+        confetti.style.animationDelay = `${Math.random() * 2}s`;
+        
+        document.querySelector('.modal-content').appendChild(confetti);
+        
+        // Remove the confetti after animation completes
+        setTimeout(() => {
+            confetti.remove();
+        }, 8000);
+    }
+}
+
+// Copy text to clipboard
+function copyToClipboard(text) {
+    // Create a temporary textarea element
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'absolute';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    
+    // Select and copy the text
+    textarea.select();
+    document.execCommand('copy');
+    
+    // Remove the temporary element
+    document.body.removeChild(textarea);
 }
 
 // Set up event listeners for the game
@@ -420,6 +505,31 @@ function setupEventListeners() {
     newGameAfterWinButton.addEventListener('click', () => {
         gameCompletedModal.hide();
         fetchNewPuzzle();
+    });
+    
+    // Share result button event listener
+    document.getElementById('shareResultBtn').addEventListener('click', () => {
+        const difficulty = document.getElementById('completed-difficulty').textContent;
+        const shareText = `I just solved a ${difficulty} level puzzle in SmartSudo! Can you beat me? 🧩`;
+        
+        // Check if Web Share API is available
+        if (navigator.share) {
+            navigator.share({
+                title: 'SmartSudo Challenge',
+                text: shareText,
+                url: window.location.href,
+            })
+            .catch(error => {
+                console.error('Error sharing:', error);
+                // Fallback
+                copyToClipboard(shareText + ' ' + window.location.href);
+                showMessage('info', 'Share text copied to clipboard!');
+            });
+        } else {
+            // Fallback for browsers that don't support the Web Share API
+            copyToClipboard(shareText + ' ' + window.location.href);
+            showMessage('info', 'Share text copied to clipboard!');
+        }
     });
     
     // AI hint button event listener

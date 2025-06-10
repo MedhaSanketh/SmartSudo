@@ -3,19 +3,30 @@ AI-powered hints for Sudoku puzzles using OpenAI.
 This module provides intelligent hints without solving the entire puzzle.
 """
 import os
-from openai import OpenAI
+import random
 
-# Try to get API key from environment variable first, then from config file
-try:
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        from config import OPENAI_API_KEY
-        api_key = OPENAI_API_KEY
-except ImportError:
-    api_key = os.environ.get("OPENAI_API_KEY")
+# Initialize OpenAI client only when API key is available
+client = None
 
-# Initialize OpenAI client
-client = OpenAI(api_key=api_key)
+def initialize_openai():
+    """Initialize OpenAI client if API key is available."""
+    global client
+    try:
+        # Try to get API key from config file first
+        try:
+            from config import OPENAI_API_KEY
+            api_key = OPENAI_API_KEY
+        except ImportError:
+            api_key = os.environ.get("OPENAI_API_KEY")
+        
+        if api_key and api_key != "your_openai_api_key_here":
+            from openai import OpenAI
+            client = OpenAI(api_key=api_key)
+            return True
+        return False
+    except Exception as e:
+        print(f"OpenAI initialization failed: {e}")
+        return False
 
 def generate_hint(puzzle, current_state, difficulty):
     """
@@ -29,49 +40,96 @@ def generate_hint(puzzle, current_state, difficulty):
     Returns:
         A hint object with row, col, and explanation
     """
-    # Find empty cells
-    empty_cells = []
-    for i in range(9):
-        for j in range(9):
-            if current_state[i][j] == 0:
-                empty_cells.append((i, j))
-    
-    if not empty_cells:
-        return {"hint_type": "complete", "message": "The puzzle is already complete!"}
-    
-    # Pick a random empty cell for the hint
-    import random
-    row, col = random.choice(empty_cells)
-    
-    # Format the puzzle state for OpenAI
-    puzzle_str = format_puzzle_for_ai(current_state)
-    
-    # First, check if there's only one possible value for this cell
-    valid_nums = get_valid_numbers(current_state, row, col)
-    
-    if len(valid_nums) == 1:
-        # If there's only one valid number, provide a basic hint
-        value = valid_nums[0]
+    try:
+        # Initialize OpenAI if not already done
+        if client is None:
+            initialize_openai()
+        
+        # Find empty cells
+        empty_cells = []
+        for i in range(9):
+            for j in range(9):
+                if current_state[i][j] == 0:
+                    empty_cells.append((i, j))
+        
+        if not empty_cells:
+            return {"hint_type": "complete", "message": "The puzzle is already complete!"}
+        
+        # Find an empty cell that can be solved with current information
+        for row in range(9):
+            for col in range(9):
+                if current_state[row][col] == 0:
+                    valid_nums = get_valid_numbers(current_state, row, col)
+                    if len(valid_nums) == 1:
+                        # Found a cell with only one valid number
+                        return {
+                            'hint_type': 'straightforward',
+                            'row': row,
+                            'col': col,
+                            'number': valid_nums[0],
+                            'message': f"Cell at row {row+1}, column {col+1} can only be {valid_nums[0]} based on current constraints."
+                        }
+        
+        # Pick a cell with few possibilities for hint
+        best_cell = None
+        min_options = 10
+        
+        for row in range(9):
+            for col in range(9):
+                if current_state[row][col] == 0:
+                    valid_nums = get_valid_numbers(current_state, row, col)
+                    if 1 < len(valid_nums) < min_options:
+                        min_options = len(valid_nums)
+                        best_cell = (row, col, valid_nums)
+        
+        if best_cell:
+            row, col, valid_nums = best_cell
+            
+            # If OpenAI is available, use AI hint
+            if client:
+                puzzle_str = format_puzzle_for_ai(current_state)
+                hint_context = {
+                    "row": row + 1,
+                    "col": col + 1,
+                    "valid_options": valid_nums,
+                    "row_values": [num for num in current_state[row] if num != 0],
+                    "col_values": [current_state[i][col] for i in range(9) if current_state[i][col] != 0],
+                    "box_values": get_box_values(current_state, row, col)
+                }
+                return generate_ai_hint(puzzle_str, hint_context, difficulty, valid_nums)
+            else:
+                # Fallback to basic hint
+                return generate_basic_hint(row, col, valid_nums)
+        
+        # Default fallback hint
+        row, col = random.choice(empty_cells)
+        valid_nums = get_valid_numbers(current_state, row, col)
+        return generate_basic_hint(row, col, valid_nums)
+        
+    except Exception as e:
         return {
-            "hint_type": "straightforward",
-            "row": row,
-            "col": col,
-            "value": value,
-            "message": f"In row {row+1}, column {col+1}, only the number {value} is possible."
+            'hint_type': 'error',
+            'message': f"Unable to generate hint: {str(e)}"
         }
+
+def generate_basic_hint(row, col, valid_nums):
+    """Generate a basic hint when OpenAI is not available."""
+    techniques = [
+        "Look for naked singles - cells with only one possible value",
+        "Check for hidden singles - numbers that can only go in one place in a row, column, or box", 
+        "Use elimination - cross out numbers that already appear in the same row, column, or box",
+        "Look for pointing pairs - when a number can only appear in one row or column within a box"
+    ]
     
-    # If there are multiple valid numbers, use AI to provide a more detailed hint
-    hint_context = {
-        "row": row + 1,  # Convert to 1-indexed for readability
-        "col": col + 1,
-        "valid_options": valid_nums,
-        "row_values": [num for num in current_state[row] if num != 0],
-        "col_values": [current_state[i][col] for i in range(9) if current_state[i][col] != 0],
-        "box_values": get_box_values(current_state, row, col)
+    technique = random.choice(techniques)
+    
+    return {
+        "hint_type": "basic",
+        "row": row,
+        "col": col,
+        "message": f"For row {row+1}, column {col+1}: {technique}. You have {len(valid_nums)} possible numbers: {valid_nums}",
+        "valid_options": valid_nums
     }
-    
-    # Generate an AI hint
-    return generate_ai_hint(puzzle_str, hint_context, difficulty, valid_nums)
 
 def get_valid_numbers(grid, row, col):
     """Get all valid numbers for a cell."""
@@ -132,6 +190,9 @@ def format_puzzle_for_ai(grid):
 def generate_ai_hint(puzzle_str, hint_context, difficulty, valid_nums):
     """Generate a hint using OpenAI's API."""
     try:
+        if not client:
+            return generate_basic_hint(hint_context["row"] - 1, hint_context["col"] - 1, valid_nums)
+            
         # Adjust the hint complexity based on difficulty
         hint_level = "subtle" if difficulty in ["hard", "expert"] else "medium"
         
@@ -182,10 +243,4 @@ Return your response in the following JSON format:
         
     except Exception as e:
         # Fallback to a simpler hint if the AI fails
-        return {
-            "hint_type": "basic",
-            "row": hint_context["row"] - 1,
-            "col": hint_context["col"] - 1,
-            "message": f"Try looking at row {hint_context['row']}, column {hint_context['col']}. What numbers are still possible here?",
-            "valid_options": valid_nums
-        }
+        return generate_basic_hint(hint_context["row"] - 1, hint_context["col"] - 1, valid_nums)

@@ -5,8 +5,17 @@ This module provides intelligent hints without solving the entire puzzle.
 import os
 from openai import OpenAI
 
+# Try to get API key from environment variable first, then from config file
+try:
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        from config import OPENAI_API_KEY
+        api_key = OPENAI_API_KEY
+except ImportError:
+    api_key = os.environ.get("OPENAI_API_KEY")
+
 # Initialize OpenAI client
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+client = OpenAI(api_key=api_key)
 
 def generate_hint(puzzle, current_state, difficulty):
     """

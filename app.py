@@ -47,11 +47,13 @@ def get_hint():
     solution = data.get('solution', [])
     difficulty = data.get('difficulty', 'medium')
     hint_type = data.get('hint_type', 'ai')  # 'ai' or 'solution'
+    n = data.get('n', 3)  # Get box size
+    size = n * n
     
     if hint_type == 'solution':
         # Provide a direct solution hint (original behavior)
-        for i in range(9):
-            for j in range(9):
+        for i in range(size):
+            for j in range(size):
                 if current_state[i][j] == 0 or current_state[i][j] != solution[i][j]:
                     return jsonify({
                         'hint_type': 'solution',
@@ -66,7 +68,7 @@ def get_hint():
     else:
         # Provide an AI-powered hint
         try:
-            hint = generate_hint(puzzle, current_state, difficulty)
+            hint = generate_hint(puzzle, current_state, difficulty, n)
             return jsonify(hint)
         except Exception as e:
             logging.error(f"Error generating AI hint: {str(e)}")
@@ -82,10 +84,12 @@ def validate():
     data = request.json if request.json else {}
     puzzle = data.get('puzzle', [])
     solution = data.get('solution', [])
+    n = data.get('n', 3)
+    size = n * n
     
     # Check if the puzzle matches the solution
-    valid = all(puzzle[i][j] == solution[i][j] for i in range(9) for j in range(9) if puzzle[i][j] != 0)
-    complete = all(puzzle[i][j] != 0 for i in range(9) for j in range(9))
+    valid = all(puzzle[i][j] == solution[i][j] for i in range(size) for j in range(size) if puzzle[i][j] != 0)
+    complete = all(puzzle[i][j] != 0 for i in range(size) for j in range(size))
     
     return jsonify({
         'valid': valid,
@@ -97,10 +101,11 @@ def visualize_backtracking():
     """Generate backtracking visualization data for the current puzzle."""
     data = request.json if request.json else {}
     puzzle = data.get('puzzle', []) if data else []
+    n = data.get('n', 3)
     
     try:
         # Get visualization data
-        steps, decision_tree = get_visualization_data(puzzle)
+        steps, decision_tree = get_visualization_data(puzzle, n)
         
         # Simplify and limit the data to avoid very large responses
         simplified_steps = []

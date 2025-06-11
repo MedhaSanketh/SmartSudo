@@ -28,7 +28,7 @@ def initialize_openai():
         print(f"OpenAI initialization failed: {e}")
         return False
 
-def generate_hint(puzzle, current_state, difficulty):
+def generate_hint(puzzle, current_state, difficulty, n=3):
     """
     Generate an AI-powered hint for the current Sudoku puzzle.
     
@@ -36,6 +36,7 @@ def generate_hint(puzzle, current_state, difficulty):
         puzzle: The original puzzle
         current_state: The current state of the puzzle
         difficulty: The difficulty level of the puzzle
+        n: Size of each box (default 3 for 9x9 grid)
     
     Returns:
         A hint object with row, col, and explanation
@@ -45,10 +46,12 @@ def generate_hint(puzzle, current_state, difficulty):
         if client is None:
             initialize_openai()
         
+        size = n * n
+        
         # Find empty cells
         empty_cells = []
-        for i in range(9):
-            for j in range(9):
+        for i in range(size):
+            for j in range(size):
                 if current_state[i][j] == 0:
                     empty_cells.append((i, j))
         
@@ -56,10 +59,10 @@ def generate_hint(puzzle, current_state, difficulty):
             return {"hint_type": "complete", "message": "The puzzle is already complete!"}
         
         # Find an empty cell that can be solved with current information
-        for row in range(9):
-            for col in range(9):
+        for row in range(size):
+            for col in range(size):
                 if current_state[row][col] == 0:
-                    valid_nums = get_valid_numbers(current_state, row, col)
+                    valid_nums = get_valid_numbers(current_state, row, col, n)
                     if len(valid_nums) == 1:
                         # Found a cell with only one valid number
                         return {
@@ -72,12 +75,12 @@ def generate_hint(puzzle, current_state, difficulty):
         
         # Pick a cell with few possibilities for hint
         best_cell = None
-        min_options = 10
+        min_options = size + 1
         
-        for row in range(9):
-            for col in range(9):
+        for row in range(size):
+            for col in range(size):
                 if current_state[row][col] == 0:
-                    valid_nums = get_valid_numbers(current_state, row, col)
+                    valid_nums = get_valid_numbers(current_state, row, col, n)
                     if 1 < len(valid_nums) < min_options:
                         min_options = len(valid_nums)
                         best_cell = (row, col, valid_nums)
@@ -87,14 +90,14 @@ def generate_hint(puzzle, current_state, difficulty):
             
             # If OpenAI is available, use AI hint
             if client:
-                puzzle_str = format_puzzle_for_ai(current_state)
+                puzzle_str = format_puzzle_for_ai(current_state, n)
                 hint_context = {
                     "row": row + 1,
                     "col": col + 1,
                     "valid_options": valid_nums,
                     "row_values": [num for num in current_state[row] if num != 0],
-                    "col_values": [current_state[i][col] for i in range(9) if current_state[i][col] != 0],
-                    "box_values": get_box_values(current_state, row, col)
+                    "col_values": [current_state[i][col] for i in range(size) if current_state[i][col] != 0],
+                    "box_values": get_box_values(current_state, row, col, n)
                 }
                 return generate_ai_hint(puzzle_str, hint_context, difficulty, valid_nums)
             else:
@@ -103,7 +106,7 @@ def generate_hint(puzzle, current_state, difficulty):
         
         # Default fallback hint
         row, col = random.choice(empty_cells)
-        valid_nums = get_valid_numbers(current_state, row, col)
+        valid_nums = get_valid_numbers(current_state, row, col, n)
         return generate_basic_hint(row, col, valid_nums)
         
     except Exception as e:
@@ -131,56 +134,60 @@ def generate_basic_hint(row, col, valid_nums):
         "valid_options": valid_nums
     }
 
-def get_valid_numbers(grid, row, col):
+def get_valid_numbers(grid, row, col, n=3):
     """Get all valid numbers for a cell."""
     if grid[row][col] != 0:
         return []
-        
+    
+    size = n * n
     valid = []
-    for num in range(1, 10):
-        if is_valid_move(grid, row, col, num):
+    for num in range(1, size + 1):
+        if is_valid_move(grid, row, col, num, n):
             valid.append(num)
     return valid
 
-def is_valid_move(grid, row, col, num):
+def is_valid_move(grid, row, col, num, n=3):
     """Check if a number is valid in the given position."""
+    size = n * n
+    
     # Check row
-    for i in range(9):
+    for i in range(size):
         if grid[row][i] == num:
             return False
     
     # Check column
-    for i in range(9):
+    for i in range(size):
         if grid[i][col] == num:
             return False
     
-    # Check 3x3 box
-    box_row, box_col = 3 * (row // 3), 3 * (col // 3)
-    for i in range(box_row, box_row + 3):
-        for j in range(box_col, box_col + 3):
+    # Check nxn box
+    box_row, box_col = n * (row // n), n * (col // n)
+    for i in range(box_row, box_row + n):
+        for j in range(box_col, box_col + n):
             if grid[i][j] == num:
                 return False
     
     return True
 
-def get_box_values(grid, row, col):
-    """Get values in the 3x3 box containing the cell."""
-    box_row, box_col = 3 * (row // 3), 3 * (col // 3)
+def get_box_values(grid, row, col, n=3):
+    """Get values in the nxn box containing the cell."""
+    box_row, box_col = n * (row // n), n * (col // n)
     values = []
-    for i in range(box_row, box_row + 3):
-        for j in range(box_col, box_col + 3):
+    for i in range(box_row, box_row + n):
+        for j in range(box_col, box_col + n):
             if grid[i][j] != 0:
                 values.append(grid[i][j])
     return values
 
-def format_puzzle_for_ai(grid):
+def format_puzzle_for_ai(grid, n=3):
     """Format the Sudoku grid as a string for the AI."""
+    size = n * n
     result = ""
-    for i in range(9):
-        if i > 0 and i % 3 == 0:
-            result += "------+-------+------\n"
-        for j in range(9):
-            if j > 0 and j % 3 == 0:
+    for i in range(size):
+        if i > 0 and i % n == 0:
+            result += "-" * (size * 2 + n - 1) + "\n"
+        for j in range(size):
+            if j > 0 and j % n == 0:
                 result += "| "
             cell = "." if grid[i][j] == 0 else str(grid[i][j])
             result += cell + " "

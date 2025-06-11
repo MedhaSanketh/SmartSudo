@@ -12,8 +12,8 @@ logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
 
-# Initialize the Sudoku generator
-sudoku_generator = SudokuGenerator()
+# Initialize the Sudoku generator (will be recreated based on user input)
+sudoku_generator = None
 
 @app.route('/')
 def index():
@@ -24,11 +24,18 @@ def index():
 def new_puzzle():
     """Generate a new Sudoku puzzle with the requested difficulty."""
     difficulty = request.args.get('difficulty', 'medium')
-    grid, solution = sudoku_generator.generate_puzzle(difficulty)
+    n = int(request.args.get('n', 3))  # Get box size, default 3
+    
+    # Create generator for the requested grid size
+    generator = SudokuGenerator(n)
+    grid, solution = generator.generate_puzzle(difficulty)
+    
     return jsonify({
         'puzzle': grid,
         'solution': solution,
-        'difficulty': difficulty
+        'difficulty': difficulty,
+        'n': n,
+        'size': n * n
     })
 
 @app.route('/get_hint', methods=['POST'])

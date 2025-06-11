@@ -7,7 +7,9 @@ import random
 import time
 
 class BacktrackingVisualizer:
-    def __init__(self):
+    def __init__(self, n=3):
+        self.n = n  # Size of each box
+        self.size = n * n  # Total grid size
         self.steps = []
         self.decision_nodes = []
         self.current_step = 0

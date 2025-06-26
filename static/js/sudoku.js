@@ -5,8 +5,6 @@ let currentSolution = [];
 let selectedCell = null;
 let currentDifficulty = 'medium';
 let fixedCells = [];
-let currentN = 3; // Box size (default 3 for 9x9 grid)
-let currentSize = 9; // Grid size (n*n)
 
 // DOM elements
 const gameBoard = document.getElementById('game-board');
@@ -36,84 +34,27 @@ function initializeGame() {
     fetchNewPuzzle();
 }
 
-// Create the dynamic Sudoku grid
+// Create the 9x9 Sudoku grid
 function createGameBoard() {
     gameBoard.innerHTML = '';
     
-    // Update grid size based on user input
-    const gridSizeInput = document.getElementById('gridSize');
-    currentN = parseInt(gridSizeInput.value) || 3;
-    currentSize = currentN * currentN;
-    
-    // Set CSS grid layout
-    gameBoard.style.gridTemplateColumns = `repeat(${currentSize}, 1fr)`;
-    gameBoard.style.gridTemplateRows = `repeat(${currentSize}, 1fr)`;
-    
-    for (let row = 0; row < currentSize; row++) {
-        for (let col = 0; col < currentSize; col++) {
+    for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
             const cell = document.createElement('div');
             cell.className = 'sudoku-cell';
             cell.dataset.row = row;
             cell.dataset.col = col;
-            
-            // Add box borders for visual separation
-            if (row % currentN === 0 && row !== 0) cell.classList.add('border-top-thick');
-            if (col % currentN === 0 && col !== 0) cell.classList.add('border-left-thick');
-            if (row === currentSize - 1) cell.classList.add('border-bottom-thick');
-            if (col === currentSize - 1) cell.classList.add('border-right-thick');
-            
             gameBoard.appendChild(cell);
         }
     }
-    
-    // Update number pad
-    updateNumberPad();
-}
-
-// Update number pad based on grid size
-function updateNumberPad() {
-    const numberPad = document.querySelector('.number-pad .row');
-    if (!numberPad) return;
-    
-    numberPad.innerHTML = '';
-    
-    // Create number buttons for 1 to currentSize
-    for (let i = 1; i <= currentSize; i++) {
-        const col = document.createElement('div');
-        col.className = 'col';
-        
-        const button = document.createElement('button');
-        button.className = 'btn btn-outline-secondary w-100 number-btn';
-        button.dataset.number = i;
-        button.textContent = i;
-        
-        col.appendChild(button);
-        numberPad.appendChild(col);
-    }
-    
-    // Re-attach event listeners
-    setupNumberPadListeners();
-}
-
-// Setup number pad event listeners
-function setupNumberPadListeners() {
-    const numberButtons = document.querySelectorAll('.number-btn');
-    numberButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
-            const number = parseInt(e.target.dataset.number);
-            inputNumber(number);
-        });
-    });
 }
 
 // Fetch a new puzzle from the server
 function fetchNewPuzzle() {
-    fetch(`/new_puzzle?difficulty=${currentDifficulty}&n=${currentN}`)
+    fetch(`/new_puzzle?difficulty=${currentDifficulty}`)
         .then(response => response.json())
         .then(data => {
             currentPuzzle = data.puzzle;
-            currentN = data.n;
-            currentSize = data.size;
             // Make a deep copy of the original puzzle for AI hints
             originalPuzzle = JSON.parse(JSON.stringify(data.puzzle));
             currentSolution = data.solution;

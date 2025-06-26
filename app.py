@@ -12,8 +12,8 @@ logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
 
-# Initialize the Sudoku generator (will be recreated based on user input)
-sudoku_generator = None
+# Initialize the Sudoku generator
+sudoku_generator = SudokuGenerator()
 
 @app.route('/')
 def index():
@@ -24,18 +24,11 @@ def index():
 def new_puzzle():
     """Generate a new Sudoku puzzle with the requested difficulty."""
     difficulty = request.args.get('difficulty', 'medium')
-    n = int(request.args.get('n', 3))  # Get box size, default 3
-    
-    # Create generator for the requested grid size
-    generator = SudokuGenerator(n)
-    grid, solution = generator.generate_puzzle(difficulty)
-    
+    grid, solution = sudoku_generator.generate_puzzle(difficulty)
     return jsonify({
         'puzzle': grid,
         'solution': solution,
-        'difficulty': difficulty,
-        'n': n,
-        'size': n * n
+        'difficulty': difficulty
     })
 
 @app.route('/get_hint', methods=['POST'])
@@ -47,13 +40,11 @@ def get_hint():
     solution = data.get('solution', [])
     difficulty = data.get('difficulty', 'medium')
     hint_type = data.get('hint_type', 'ai')  # 'ai' or 'solution'
-    n = data.get('n', 3)  # Get box size
-    size = n * n
     
     if hint_type == 'solution':
         # Provide a direct solution hint (original behavior)
-        for i in range(size):
-            for j in range(size):
+        for i in range(9):
+            for j in range(9):
                 if current_state[i][j] == 0 or current_state[i][j] != solution[i][j]:
                     return jsonify({
                         'hint_type': 'solution',
@@ -68,7 +59,7 @@ def get_hint():
     else:
         # Provide an AI-powered hint
         try:
-            hint = generate_hint(puzzle, current_state, difficulty, n)
+            hint = generate_hint(puzzle, current_state, difficulty)
             return jsonify(hint)
         except Exception as e:
             logging.error(f"Error generating AI hint: {str(e)}")
@@ -84,12 +75,10 @@ def validate():
     data = request.json if request.json else {}
     puzzle = data.get('puzzle', [])
     solution = data.get('solution', [])
-    n = data.get('n', 3)
-    size = n * n
     
     # Check if the puzzle matches the solution
-    valid = all(puzzle[i][j] == solution[i][j] for i in range(size) for j in range(size) if puzzle[i][j] != 0)
-    complete = all(puzzle[i][j] != 0 for i in range(size) for j in range(size))
+    valid = all(puzzle[i][j] == solution[i][j] for i in range(9) for j in range(9) if puzzle[i][j] != 0)
+    complete = all(puzzle[i][j] != 0 for i in range(9) for j in range(9))
     
     return jsonify({
         'valid': valid,
@@ -101,11 +90,10 @@ def visualize_backtracking():
     """Generate backtracking visualization data for the current puzzle."""
     data = request.json if request.json else {}
     puzzle = data.get('puzzle', []) if data else []
-    n = data.get('n', 3)
     
     try:
         # Get visualization data
-        steps, decision_tree = get_visualization_data(puzzle, n)
+        steps, decision_tree = get_visualization_data(puzzle)
         
         # Simplify and limit the data to avoid very large responses
         simplified_steps = []

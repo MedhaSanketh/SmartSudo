@@ -7,9 +7,7 @@ import random
 import time
 
 class BacktrackingVisualizer:
-    def __init__(self, n=3):
-        self.n = n  # Size of each box
-        self.size = n * n  # Total grid size
+    def __init__(self):
         self.steps = []
         self.decision_nodes = []
         self.current_step = 0
@@ -46,17 +44,17 @@ class BacktrackingVisualizer:
     def _solve_with_visualization(self, row, col):
         """Recursive function to solve the Sudoku puzzle with visualization."""
         # If we've reached the end of the grid, we're done
-        if row == self.size:
+        if row == 9:
             return True
         
         # If this cell is already filled, move to the next cell
         if self.grid[row][col] != 0:
             # Calculate next position
-            next_row, next_col = (row, col + 1) if col < self.size - 1 else (row + 1, 0)
+            next_row, next_col = (row, col + 1) if col < 8 else (row + 1, 0)
             return self._solve_with_visualization(next_row, next_col)
         
-        # Try numbers 1 to size for this cell
-        nums = list(range(1, self.size + 1))
+        # Try numbers 1-9 for this cell
+        nums = list(range(1, 10))
         random.shuffle(nums)  # Try numbers in random order for more interesting visualization
         
         parent_node_id = len(self.steps) - 1
@@ -91,7 +89,7 @@ class BacktrackingVisualizer:
                 })
                 
                 # Calculate next position
-                next_row, next_col = (row, col + 1) if col < self.size - 1 else (row + 1, 0)
+                next_row, next_col = (row, col + 1) if col < 8 else (row + 1, 0)
                 
                 # Recursive call
                 if self._solve_with_visualization(next_row, next_col):
@@ -125,19 +123,19 @@ class BacktrackingVisualizer:
     def _is_valid(self, row, col, num):
         """Check if a number is valid in the given position."""
         # Check row
-        for i in range(self.size):
+        for i in range(9):
             if self.grid[row][i] == num:
                 return False
         
         # Check column
-        for i in range(self.size):
+        for i in range(9):
             if self.grid[i][col] == num:
                 return False
         
-        # Check nxn box
-        box_row, box_col = self.n * (row // self.n), self.n * (col // self.n)
-        for i in range(box_row, box_row + self.n):
-            for j in range(box_col, box_col + self.n):
+        # Check 3x3 box
+        box_row, box_col = 3 * (row // 3), 3 * (col // 3)
+        for i in range(box_row, box_row + 3):
+            for j in range(box_col, box_col + 3):
                 if self.grid[i][j] == num:
                     return False
         
@@ -150,10 +148,10 @@ class BacktrackingVisualizer:
                 self.decision_nodes[i]["success"] = success
                 break
 
-def get_visualization_data(puzzle, n=3):
+def get_visualization_data(puzzle):
     """
     Generate visualization data for the given puzzle.
     Returns the steps and decision tree data.
     """
-    visualizer = BacktrackingVisualizer(n)
+    visualizer = BacktrackingVisualizer()
     return visualizer.visualize_backtracking(puzzle)

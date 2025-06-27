@@ -5,7 +5,6 @@ from sudoku_generator import SudokuGenerator
 from visualization import get_visualization_data
 from advanced_solver import AdvancedSudokuSolver, compare_algorithms
 from ai_hints import generate_hint
-from variable_sudoku import create_variable_puzzle, VariableSudokuSolver
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -22,38 +21,15 @@ def index():
     """Render the main Sudoku game page."""
     return render_template('index.html')
 
-@app.route('/new_puzzle', methods=['GET', 'POST'])
+@app.route('/new_puzzle', methods=['GET'])
 def new_puzzle():
-    """Generate a new Sudoku puzzle with the requested difficulty and grid size."""
-    if request.method == 'GET':
-        difficulty = request.args.get('difficulty', 'medium')
-        grid_type = request.args.get('grid_type', '3x3')
-    else:
-        data = request.json if request.json else {}
-        difficulty = data.get('difficulty', 'medium')
-        grid_type = data.get('grid_type', '3x3')
-    
-    if grid_type == '3x3':
-        # Use original generator for 9x9 puzzles
-        generator = SudokuGenerator()
-        result = generator.generate_puzzle(difficulty)
-        puzzle_data = {
-            'puzzle': result['puzzle'],
-            'solution': result['solution'],
-            'grid_size': 9,
-            'box_size': 3
-        }
-    else:
-        # Use variable generator for other sizes
-        puzzle_data = create_variable_puzzle(grid_type, difficulty)
-    
+    """Generate a new Sudoku puzzle with the requested difficulty."""
+    difficulty = request.args.get('difficulty', 'medium')
+    grid, solution = sudoku_generator.generate_puzzle(difficulty)
     return jsonify({
-        'puzzle': puzzle_data['puzzle'],
-        'solution': puzzle_data['solution'],
-        'difficulty': difficulty,
-        'grid_type': grid_type,
-        'grid_size': puzzle_data['grid_size'],
-        'box_size': puzzle_data['box_size']
+        'puzzle': grid,
+        'solution': solution,
+        'difficulty': difficulty
     })
 
 @app.route('/get_hint', methods=['POST'])
@@ -157,16 +133,11 @@ def solve_advanced():
     try:
         data = request.json if request.json else {}
         puzzle = data.get('puzzle', [])
-        grid_size = data.get('grid_size', 9)
         
         if not puzzle:
             return jsonify({'error': 'No puzzle provided'}), 400
         
-        if grid_size == 9:
-            advanced_solver = AdvancedSudokuSolver()
-        else:
-            advanced_solver = VariableSudokuSolver(grid_size)
-        
+        advanced_solver = AdvancedSudokuSolver()
         result = advanced_solver.solve_with_heuristics(puzzle)
         
         return jsonify(result)

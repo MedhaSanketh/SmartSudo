@@ -6,32 +6,18 @@
     --smartsudo-highlight: #ffbe0b;
 }
 
-/* Sudoku board styling with gradient border - Variable size support */
+/* Sudoku board styling with gradient border */
 .sudoku-board {
     display: grid;
+    grid-template-columns: repeat(9, 1fr);
     grid-gap: 1px;
+    max-width: 540px;
     margin: 0 auto;
     background-color: var(--bs-secondary);
     padding: 3px;
     border-radius: 8px;
     position: relative;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
-/* Grid size variations */
-.sudoku-board.grid-2x2 {
-    grid-template-columns: repeat(4, 1fr);
-    max-width: 240px;
-}
-
-.sudoku-board.grid-3x3 {
-    grid-template-columns: repeat(9, 1fr);
-    max-width: 540px;
-}
-
-.sudoku-board.grid-4x4 {
-    grid-template-columns: repeat(16, 1fr);
-    max-width: 640px;
 }
 
 .sudoku-board::before {
@@ -54,6 +40,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 1.25rem;
     font-weight: 500;
     cursor: pointer;
     position: relative;
@@ -61,20 +48,6 @@
     transition: all 0.2s ease;
     border-radius: 4px;
     margin: 1px;
-}
-
-/* Font size adjustments for different grid sizes */
-.grid-2x2 .sudoku-cell {
-    font-size: 1.5rem;
-}
-
-.grid-3x3 .sudoku-cell {
-    font-size: 1.25rem;
-}
-
-.grid-4x4 .sudoku-cell {
-    font-size: 1rem;
-}
 }
 
 .sudoku-cell:hover:not(.fixed) {

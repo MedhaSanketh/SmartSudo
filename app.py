@@ -3,6 +3,7 @@ import logging
 from flask import Flask, render_template, jsonify, request
 from sudoku_generator import SudokuGenerator
 from visualization import get_visualization_data
+from advanced_solver import AdvancedSudokuSolver, compare_algorithms
 from ai_hints import generate_hint
 
 # Configure logging
@@ -120,6 +121,47 @@ def visualize_backtracking():
     except Exception as e:
         logging.error(f"Error generating visualization: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/advanced')
+def advanced():
+    """Render the advanced algorithm comparison page."""
+    return render_template('advanced.html')
+
+@app.route('/solve_advanced', methods=['POST'])
+def solve_advanced():
+    """Solve puzzle using MRV+LCV heuristics and return results."""
+    try:
+        data = request.json if request.json else {}
+        puzzle = data.get('puzzle', [])
+        
+        if not puzzle:
+            return jsonify({'error': 'No puzzle provided'}), 400
+        
+        advanced_solver = AdvancedSudokuSolver()
+        result = advanced_solver.solve_with_heuristics(puzzle)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logging.error(f"Error in solve_advanced: {str(e)}")
+        return jsonify({'error': 'Failed to solve puzzle'}), 500
+
+@app.route('/compare_algorithms', methods=['POST'])
+def compare_algorithms_route():
+    """Compare basic backtracking vs MRV+LCV algorithms."""
+    try:
+        data = request.json if request.json else {}
+        puzzle = data.get('puzzle', [])
+        
+        if not puzzle:
+            return jsonify({'error': 'No puzzle provided'}), 400
+        
+        comparison = compare_algorithms(puzzle)
+        return jsonify(comparison)
+        
+    except Exception as e:
+        logging.error(f"Error in compare_algorithms: {str(e)}")
+        return jsonify({'error': 'Failed to compare algorithms'}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

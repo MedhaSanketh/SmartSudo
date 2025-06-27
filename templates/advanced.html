@@ -217,38 +217,49 @@
 
     <!-- Bootstrap JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Include JavaScript -->
-    <script src="{{ url_for('static', filename='js/sudoku.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/visualization.js') }}"></script>
+    
     <script>
-        // Advanced algorithm page specific JavaScript
-        let currentPuzzle = null;
-        let currentSolution = null;
-        let visualizationSteps = null;
-        let visualizationPlaying = false;
-        let visualizationStep = 0;
-        let visualizationInterval = null;
+        // Advanced algorithm page specific JavaScript - isolated namespace
+        const AdvancedPage = {
+            currentPuzzle: null,
+            currentSolution: null,
+            visualizationSteps: null,
+            visualizationPlaying: false,
+            visualizationStep: 0,
+            visualizationInterval: null
+        };
 
         document.addEventListener('DOMContentLoaded', function() {
             // Generate initial puzzle
             generateNewPuzzle();
             
-            // Event listeners
-            document.getElementById('generatePuzzle').addEventListener('click', generateNewPuzzle);
-            document.getElementById('solveBasic').addEventListener('click', solveWithBasic);
-            document.getElementById('solveAdvanced').addEventListener('click', solveWithAdvanced);
-            document.getElementById('compareAlgorithms').addEventListener('click', compareAlgorithms);
+            // Event listeners - with error checking
+            const generateBtn = document.getElementById('generatePuzzle');
+            const solveBasicBtn = document.getElementById('solveBasic');
+            const solveAdvancedBtn = document.getElementById('solveAdvanced');
+            const compareBtn = document.getElementById('compareAlgorithms');
             
-            // Visualization controls
-            document.getElementById('playVisualization').addEventListener('click', playVisualization);
-            document.getElementById('pauseVisualization').addEventListener('click', pauseVisualization);
-            document.getElementById('stepVisualization').addEventListener('click', stepVisualization);
-            document.getElementById('resetVisualization').addEventListener('click', resetVisualization);
-            document.getElementById('speedRange').addEventListener('input', updateVisualizationSpeed);
+            if (generateBtn) generateBtn.addEventListener('click', generateNewPuzzle);
+            if (solveBasicBtn) solveBasicBtn.addEventListener('click', solveWithBasic);
+            if (solveAdvancedBtn) solveAdvancedBtn.addEventListener('click', solveWithAdvanced);
+            if (compareBtn) compareBtn.addEventListener('click', compareAlgorithms);
+            
+            // Visualization controls - with error checking
+            const playBtn = document.getElementById('playVisualization');
+            const pauseBtn = document.getElementById('pauseVisualization');
+            const stepBtn = document.getElementById('stepVisualization');
+            const resetBtn = document.getElementById('resetVisualization');
+            const speedRange = document.getElementById('speedRange');
+            
+            if (playBtn) playBtn.addEventListener('click', playVisualization);
+            if (pauseBtn) pauseBtn.addEventListener('click', pauseVisualization);
+            if (stepBtn) stepBtn.addEventListener('click', stepVisualization);
+            if (resetBtn) resetBtn.addEventListener('click', resetVisualization);
+            if (speedRange) speedRange.addEventListener('input', updateVisualizationSpeed);
         });
 
         function generateNewPuzzle() {
-            const difficulty = document.getElementById('difficulty').value;
+            const difficulty = document.getElementById('difficulty').value || 'medium';
             
             fetch('/new_puzzle', {
                 method: 'POST',
@@ -257,10 +268,11 @@
             })
             .then(response => response.json())
             .then(data => {
-                currentPuzzle = data.puzzle;
-                currentSolution = data.solution;
+                AdvancedPage.currentPuzzle = data.puzzle;
+                AdvancedPage.currentSolution = data.solution;
                 renderPuzzle();
                 hideResults();
+                showMessage('success', `Generated new ${difficulty} puzzle`);
             })
             .catch(error => {
                 console.error('Error generating puzzle:', error);
@@ -269,7 +281,10 @@
         }
 
         function solveWithBasic() {
-            if (!currentPuzzle) return;
+            if (!AdvancedPage.currentPuzzle) {
+                showMessage('error', 'Please generate a puzzle first');
+                return;
+            }
             
             showMessage('info', 'Solving with basic backtracking...');
             
@@ -277,7 +292,7 @@
             fetch('/visualize_backtracking', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ puzzle: currentPuzzle })
+                body: JSON.stringify({ puzzle: AdvancedPage.currentPuzzle })
             })
             .then(response => response.json())
             .then(data => {
@@ -312,14 +327,17 @@
         }
 
         function solveWithAdvanced() {
-            if (!currentPuzzle) return;
+            if (!AdvancedPage.currentPuzzle) {
+                showMessage('error', 'Please generate a puzzle first');
+                return;
+            }
             
             showMessage('info', 'Solving with MRV+LCV heuristics...');
             
             fetch('/solve_advanced', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ puzzle: currentPuzzle })
+                body: JSON.stringify({ puzzle: AdvancedPage.currentPuzzle })
             })
             .then(response => response.json())
             .then(data => {
@@ -340,7 +358,7 @@
                     renderSolvedPuzzle(data.grid);
                 }
                 
-                visualizationSteps = data.steps || [];
+                AdvancedPage.visualizationSteps = data.steps || [];
                 
                 showResults();
                 showVisualization();
@@ -353,14 +371,17 @@
         }
 
         function compareAlgorithms() {
-            if (!currentPuzzle) return;
+            if (!AdvancedPage.currentPuzzle) {
+                showMessage('error', 'Please generate a puzzle first');
+                return;
+            }
             
             showMessage('info', 'Comparing algorithms...');
             
             fetch('/compare_algorithms', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ puzzle: currentPuzzle })
+                body: JSON.stringify({ puzzle: AdvancedPage.currentPuzzle })
             })
             .then(response => response.json())
             .then(data => {
@@ -447,43 +468,43 @@
         }
 
         function playVisualization() {
-            if (!visualizationSteps || visualizationSteps.length === 0) return;
+            if (!AdvancedPage.visualizationSteps || AdvancedPage.visualizationSteps.length === 0) return;
             
-            visualizationPlaying = true;
-            const speed = parseInt(document.getElementById('speedRange').value);
+            AdvancedPage.visualizationPlaying = true;
+            const speed = parseInt(document.getElementById('speedRange')?.value || 5);
             const interval = 1000 / speed;
             
-            visualizationInterval = setInterval(() => {
-                if (visualizationStep >= visualizationSteps.length) {
+            AdvancedPage.visualizationInterval = setInterval(() => {
+                if (AdvancedPage.visualizationStep >= AdvancedPage.visualizationSteps.length) {
                     pauseVisualization();
                     return;
                 }
                 
-                renderVisualizationStep(visualizationStep);
-                visualizationStep++;
+                renderVisualizationStep(AdvancedPage.visualizationStep);
+                AdvancedPage.visualizationStep++;
             }, interval);
         }
 
         function pauseVisualization() {
-            visualizationPlaying = false;
-            if (visualizationInterval) {
-                clearInterval(visualizationInterval);
-                visualizationInterval = null;
+            AdvancedPage.visualizationPlaying = false;
+            if (AdvancedPage.visualizationInterval) {
+                clearInterval(AdvancedPage.visualizationInterval);
+                AdvancedPage.visualizationInterval = null;
             }
         }
 
         function stepVisualization() {
-            if (!visualizationSteps || visualizationStep >= visualizationSteps.length) return;
+            if (!AdvancedPage.visualizationSteps || AdvancedPage.visualizationStep >= AdvancedPage.visualizationSteps.length) return;
             
-            renderVisualizationStep(visualizationStep);
-            visualizationStep++;
+            renderVisualizationStep(AdvancedPage.visualizationStep);
+            AdvancedPage.visualizationStep++;
         }
 
         function resetVisualization() {
             pauseVisualization();
-            visualizationStep = 0;
-            if (currentPuzzle) {
-                renderVisualizationBoard(currentPuzzle);
+            AdvancedPage.visualizationStep = 0;
+            if (AdvancedPage.currentPuzzle) {
+                renderVisualizationBoard(AdvancedPage.currentPuzzle);
             }
         }
 
@@ -512,17 +533,21 @@
         }
 
         function updateVisualizationSpeed() {
-            const speed = document.getElementById('speedRange').value;
-            document.getElementById('speedValue').textContent = speed + 'x';
+            const speedRange = document.getElementById('speedRange');
+            const speedValue = document.getElementById('speedValue');
             
-            if (visualizationPlaying) {
+            if (speedRange && speedValue) {
+                speedValue.textContent = speedRange.value + 'x';
+            }
+            
+            if (AdvancedPage.visualizationPlaying) {
                 pauseVisualization();
                 playVisualization();
             }
         }
 
         function renderPuzzle() {
-            if (!currentPuzzle) return;
+            if (!AdvancedPage.currentPuzzle) return;
             
             const board = document.getElementById('sudoku-board');
             board.innerHTML = '';
@@ -532,8 +557,8 @@
                     const cell = document.createElement('div');
                     cell.className = 'sudoku-cell';
                     
-                    if (currentPuzzle[row][col] !== 0) {
-                        cell.textContent = currentPuzzle[row][col];
+                    if (AdvancedPage.currentPuzzle[row][col] !== 0) {
+                        cell.textContent = AdvancedPage.currentPuzzle[row][col];
                         cell.classList.add('prefilled');
                     }
                     
@@ -553,7 +578,7 @@
                     cell.textContent = solvedGrid[row][col];
                     
                     // Color code: original puzzle cells vs solved cells
-                    if (currentPuzzle && currentPuzzle[row][col] !== 0) {
+                    if (AdvancedPage.currentPuzzle && AdvancedPage.currentPuzzle[row][col] !== 0) {
                         cell.classList.add('prefilled');
                     } else {
                         cell.classList.add('solved-cell');

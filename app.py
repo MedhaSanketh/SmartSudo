@@ -21,10 +21,15 @@ def index():
     """Render the main Sudoku game page."""
     return render_template('index.html')
 
-@app.route('/new_puzzle', methods=['GET'])
+@app.route('/new_puzzle', methods=['GET', 'POST'])
 def new_puzzle():
     """Generate a new Sudoku puzzle with the requested difficulty."""
-    difficulty = request.args.get('difficulty', 'medium')
+    if request.method == 'POST':
+        data = request.json if request.json else {}
+        difficulty = data.get('difficulty', 'medium')
+    else:
+        difficulty = request.args.get('difficulty', 'medium')
+    
     grid, solution = sudoku_generator.generate_puzzle(difficulty)
     return jsonify({
         'puzzle': grid,

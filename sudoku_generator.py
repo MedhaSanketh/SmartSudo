@@ -20,7 +20,10 @@ class SudokuGenerator:
         # Remove cells based on difficulty
         self._remove_cells(difficulty)
         
-        return self.grid, self.solution
+        return {
+            'puzzle': self.grid,
+            'solution': self.solution
+        }
     
     def _fill_grid(self):
         """Fill the grid with a valid Sudoku solution."""

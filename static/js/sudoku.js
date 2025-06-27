@@ -4,6 +4,9 @@ let originalPuzzle = []; // Store the original puzzle for AI hints
 let currentSolution = [];
 let selectedCell = null;
 let currentDifficulty = 'medium';
+let currentGridType = '3x3';
+let currentGridSize = 9;
+let currentBoxSize = 3;
 let fixedCells = [];
 
 // DOM elements
@@ -16,6 +19,8 @@ const solutionHintButton = document.getElementById('solution-hint-btn');
 const checkButton = document.getElementById('check-btn');
 const difficultyOptions = document.querySelectorAll('.difficulty-option');
 const currentDifficultyElement = document.getElementById('current-difficulty');
+const gridSizeOptions = document.querySelectorAll('.grid-size-option');
+const currentGridSizeElement = document.getElementById('current-grid-size');
 const gameCompletedModal = new bootstrap.Modal(document.getElementById('gameCompletedModal'));
 const newGameAfterWinButton = document.getElementById('newGameAfterWin');
 const hintDisplay = document.getElementById('hint-display');
@@ -34,12 +39,15 @@ function initializeGame() {
     fetchNewPuzzle();
 }
 
-// Create the 9x9 Sudoku grid
+// Create the variable-size Sudoku grid
 function createGameBoard() {
     gameBoard.innerHTML = '';
     
-    for (let row = 0; row < 9; row++) {
-        for (let col = 0; col < 9; col++) {
+    // Update board classes for grid size
+    gameBoard.className = `sudoku-board grid-${currentGridType}`;
+    
+    for (let row = 0; row < currentGridSize; row++) {
+        for (let col = 0; col < currentGridSize; col++) {
             const cell = document.createElement('div');
             cell.className = 'sudoku-cell';
             cell.dataset.row = row;
@@ -51,30 +59,96 @@ function createGameBoard() {
 
 // Fetch a new puzzle from the server
 function fetchNewPuzzle() {
-    fetch(`/new_puzzle?difficulty=${currentDifficulty}`)
-        .then(response => response.json())
-        .then(data => {
-            currentPuzzle = data.puzzle;
-            // Make a deep copy of the original puzzle for AI hints
-            originalPuzzle = JSON.parse(JSON.stringify(data.puzzle));
-            currentSolution = data.solution;
-            currentDifficulty = data.difficulty;
-            renderPuzzle();
-            fixedCells = [];
-            
-            // Mark initial cells as fixed
-            for (let row = 0; row < 9; row++) {
-                for (let col = 0; col < 9; col++) {
-                    if (currentPuzzle[row][col] !== 0) {
-                        fixedCells.push(`${row}-${col}`);
-                    }
+    fetch('/new_puzzle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            difficulty: currentDifficulty,
+            grid_type: currentGridType
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        currentPuzzle = data.puzzle;
+        originalPuzzle = JSON.parse(JSON.stringify(data.puzzle));
+        currentSolution = data.solution;
+        currentDifficulty = data.difficulty;
+        currentGridSize = data.grid_size;
+        currentBoxSize = data.box_size;
+        currentGridType = data.grid_type;
+        
+        createGameBoard(); // Recreate board with new size
+        renderPuzzle();
+        updateNumberPad();
+        fixedCells = [];
+        
+        // Mark initial cells as fixed
+        for (let row = 0; row < currentGridSize; row++) {
+            for (let col = 0; col < currentGridSize; col++) {
+                if (currentPuzzle[row][col] !== 0) {
+                    fixedCells.push(`${row}-${col}`);
                 }
             }
+        }
             
             // Hide hint display when starting a new puzzle
             hideHintDisplay();
         })
         .catch(error => console.error('Error fetching puzzle:', error));
+}
+
+// Update the number pad based on current grid size
+function updateNumberPad() {
+    const numberPad = document.querySelector('.number-pad .row');
+    if (!numberPad) return;
+    
+    numberPad.innerHTML = '';
+    
+    // Add number buttons based on grid size
+    for (let i = 1; i <= currentGridSize; i++) {
+        const col = document.createElement('div');
+        col.className = 'col';
+        
+        const button = document.createElement('button');
+        button.className = 'btn btn-outline-secondary w-100 number-btn';
+        button.setAttribute('data-number', i);
+        button.textContent = i;
+        
+        col.appendChild(button);
+        numberPad.appendChild(col);
+    }
+    
+    // Add erase button
+    const eraseCol = document.createElement('div');
+    eraseCol.className = 'col';
+    
+    const eraseButton = document.createElement('button');
+    eraseButton.className = 'btn btn-outline-danger w-100';
+    eraseButton.id = 'erase-btn';
+    eraseButton.innerHTML = '<i class="fas fa-eraser"></i>';
+    
+    eraseCol.appendChild(eraseButton);
+    numberPad.appendChild(eraseCol);
+    
+    // Re-attach event listeners
+    setupNumberPadListeners();
+}
+
+// Setup event listeners for number pad buttons
+function setupNumberPadListeners() {
+    // Number buttons event listeners
+    document.querySelectorAll('.number-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            const number = parseInt(button.dataset.number);
+            inputNumber(number);
+        });
+    });
+    
+    // Erase button event listener
+    const eraseButton = document.getElementById('erase-btn');
+    if (eraseButton) {
+        eraseButton.addEventListener('click', eraseNumber);
+    }
 }
 
 // Render the current puzzle state on the board
@@ -487,16 +561,8 @@ function setupEventListeners() {
         }
     });
     
-    // Number buttons event listeners
-    numberButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const number = parseInt(button.dataset.number);
-            inputNumber(number);
-        });
-    });
-    
-    // Erase button event listener
-    eraseButton.addEventListener('click', eraseNumber);
+    // Setup number pad listeners
+    setupNumberPadListeners();
     
     // New game button event listener
     newGameButton.addEventListener('click', fetchNewPuzzle);
@@ -557,12 +623,43 @@ function setupEventListeners() {
         });
     });
     
+    // Grid size options event listeners
+    gridSizeOptions.forEach(option => {
+        option.addEventListener('click', (event) => {
+            event.preventDefault();
+            const gridType = option.dataset.gridType;
+            const gridSizeText = option.textContent;
+            
+            currentGridType = gridType;
+            currentGridSizeElement.textContent = gridSizeText;
+            
+            // Update grid size based on type
+            switch(gridType) {
+                case '2x2':
+                    currentGridSize = 4;
+                    currentBoxSize = 2;
+                    break;
+                case '3x3':
+                    currentGridSize = 9;
+                    currentBoxSize = 3;
+                    break;
+                case '4x4':
+                    currentGridSize = 16;
+                    currentBoxSize = 4;
+                    break;
+            }
+            
+            fetchNewPuzzle();
+        });
+    });
+    
     // Keyboard input event listener
     document.addEventListener('keydown', (event) => {
         if (!selectedCell) return;
         
-        if (event.key >= '1' && event.key <= '9') {
-            inputNumber(parseInt(event.key));
+        const keyNumber = parseInt(event.key);
+        if (keyNumber >= 1 && keyNumber <= currentGridSize) {
+            inputNumber(keyNumber);
         } else if (event.key === 'Backspace' || event.key === 'Delete') {
             eraseNumber();
         } else if (event.key === 'ArrowUp') {
@@ -583,18 +680,15 @@ function moveSelection(dx, dy) {
     
     const row = parseInt(selectedCell.dataset.row);
     const col = parseInt(selectedCell.dataset.col);
-    const newRow = Math.max(0, Math.min(8, row + dy));
-    const newCol = Math.max(0, Math.min(8, col + dx));
+    const newRow = Math.max(0, Math.min(currentGridSize - 1, row + dy));
+    const newCol = Math.max(0, Math.min(currentGridSize - 1, col + dx));
     
     if (newRow === row && newCol === col) return;
     
     const newCell = document.querySelector(`.sudoku-cell[data-row="${newRow}"][data-col="${newCol}"]`);
     
-    if (newCell && !newCell.classList.contains('fixed')) {
+    if (newCell) {
         selectCell(newCell);
-    } else {
-        // If the new cell is fixed, try to move in the same direction again
-        moveSelection(dx, dy);
     }
 }
 

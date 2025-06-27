@@ -17,18 +17,32 @@
             <!-- Game section -->
             <div class="col-lg-6">
                 <div class="card shadow-sm mb-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h1 class="h4 mb-0"><i class="fas fa-brain text-info me-2"></i>SmartSudo</h1>
-                        <div class="dropdown">
-                            <button class="btn btn-secondary dropdown-toggle" type="button" id="difficultyDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                Difficulty: <span id="current-difficulty">Medium</span>
-                            </button>
-                            <ul class="dropdown-menu" aria-labelledby="difficultyDropdown">
-                                <li><a class="dropdown-item difficulty-option" data-difficulty="easy" href="#">Easy</a></li>
-                                <li><a class="dropdown-item difficulty-option" data-difficulty="medium" href="#">Medium</a></li>
-                                <li><a class="dropdown-item difficulty-option" data-difficulty="hard" href="#">Hard</a></li>
-                                <li><a class="dropdown-item difficulty-option" data-difficulty="expert" href="#">Expert</a></li>
-                            </ul>
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h1 class="h4 mb-0"><i class="fas fa-brain text-info me-2"></i>SmartSudo</h1>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="dropdown">
+                                <button class="btn btn-outline-info dropdown-toggle btn-sm" type="button" id="gridSizeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Grid: <span id="current-grid-size">3x3 (9x9)</span>
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="gridSizeDropdown">
+                                    <li><a class="dropdown-item grid-size-option" data-grid-type="2x2" href="#">2x2 (4x4 grid)</a></li>
+                                    <li><a class="dropdown-item grid-size-option" data-grid-type="3x3" href="#">3x3 (9x9 grid)</a></li>
+                                    <li><a class="dropdown-item grid-size-option" data-grid-type="4x4" href="#">4x4 (16x16 grid)</a></li>
+                                </ul>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="difficultyDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Difficulty: <span id="current-difficulty">Medium</span>
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="difficultyDropdown">
+                                    <li><a class="dropdown-item difficulty-option" data-difficulty="easy" href="#">Easy</a></li>
+                                    <li><a class="dropdown-item difficulty-option" data-difficulty="medium" href="#">Medium</a></li>
+                                    <li><a class="dropdown-item difficulty-option" data-difficulty="hard" href="#">Hard</a></li>
+                                    <li><a class="dropdown-item difficulty-option" data-difficulty="expert" href="#">Expert</a></li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                     <div class="card-body">

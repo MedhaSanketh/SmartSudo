@@ -176,42 +176,6 @@
                 </div>
             </div>
 
-            <!-- Detailed Comparison Table -->
-            <div class="comparison-table">
-                <h5>Detailed Analysis</h5>
-                <table class="table table-dark table-striped">
-                    <thead>
-                        <tr>
-                            <th>Metric</th>
-                            <th>Basic Backtracking</th>
-                            <th>MRV + LCV</th>
-                            <th>Improvement</th>
-                        </tr>
-                    </thead>
-                    <tbody id="comparisonTableBody">
-                        <!-- Populated by JavaScript -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Algorithm Visualization -->
-        <div id="visualizationSection" class="mt-4" style="display: none;">
-            <h3 class="text-center mb-4">Solving Process Visualization</h3>
-            <div class="visualization-container">
-                <div id="visualization-board" class="sudoku-board"></div>
-                <div class="visualization-controls mt-3">
-                    <button id="playVisualization" class="btn btn-primary">Play</button>
-                    <button id="pauseVisualization" class="btn btn-secondary">Pause</button>
-                    <button id="stepVisualization" class="btn btn-info">Step</button>
-                    <button id="resetVisualization" class="btn btn-outline-light">Reset</button>
-                    <div class="speed-control mt-2">
-                        <label for="speedRange">Speed:</label>
-                        <input type="range" id="speedRange" min="1" max="10" value="5" class="form-range">
-                        <span id="speedValue">5x</span>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -222,11 +186,7 @@
         // Advanced algorithm page specific JavaScript - isolated namespace
         const AdvancedPage = {
             currentPuzzle: null,
-            currentSolution: null,
-            visualizationSteps: null,
-            visualizationPlaying: false,
-            visualizationStep: 0,
-            visualizationInterval: null
+            currentSolution: null
         };
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -243,19 +203,6 @@
             if (solveBasicBtn) solveBasicBtn.addEventListener('click', solveWithBasic);
             if (solveAdvancedBtn) solveAdvancedBtn.addEventListener('click', solveWithAdvanced);
             if (compareBtn) compareBtn.addEventListener('click', compareAlgorithms);
-            
-            // Visualization controls - with error checking
-            const playBtn = document.getElementById('playVisualization');
-            const pauseBtn = document.getElementById('pauseVisualization');
-            const stepBtn = document.getElementById('stepVisualization');
-            const resetBtn = document.getElementById('resetVisualization');
-            const speedRange = document.getElementById('speedRange');
-            
-            if (playBtn) playBtn.addEventListener('click', playVisualization);
-            if (pauseBtn) pauseBtn.addEventListener('click', pauseVisualization);
-            if (stepBtn) stepBtn.addEventListener('click', stepVisualization);
-            if (resetBtn) resetBtn.addEventListener('click', resetVisualization);
-            if (speedRange) speedRange.addEventListener('input', updateVisualizationSpeed);
         });
 
         function generateNewPuzzle() {
@@ -358,10 +305,7 @@
                     renderSolvedPuzzle(data.grid);
                 }
                 
-                AdvancedPage.visualizationSteps = data.steps || [];
-                
                 showResults();
-                showVisualization();
                 showMessage('success', `MRV+LCV completed! Used ${stats.steps || 0} steps with ${stats.backtrack_count || 0} backtracks in ${stats.solving_time ? Math.round(stats.solving_time * 1000) : 0}ms.`);
             })
             .catch(error => {
@@ -427,32 +371,6 @@
                           improvementFactor < 0.9 ? 'Basic' : 'Tie';
             document.getElementById('winner').textContent = winner;
             
-            // Update comparison table
-            updateComparisonTable(basic, advanced, improvementFactor);
-        }
-
-        function updateComparisonTable(basic, advanced, improvementFactor) {
-            const tbody = document.getElementById('comparisonTableBody');
-            tbody.innerHTML = '';
-            
-            const metrics = [
-                { name: 'Total Steps', basic: basic.steps, advanced: advanced.steps },
-                { name: 'Backtrack Count', basic: basic.backtrack_count, advanced: advanced.backtrack_count },
-                { name: 'Solving Time (ms)', basic: basic.solving_time, advanced: Math.round(advanced.solving_time * 1000) }
-            ];
-            
-            metrics.forEach(metric => {
-                const row = document.createElement('tr');
-                const improvement = metric.basic > 0 ? (metric.basic / metric.advanced).toFixed(1) : 'N/A';
-                
-                row.innerHTML = `
-                    <td>${metric.name}</td>
-                    <td>${metric.basic}</td>
-                    <td>${metric.advanced}</td>
-                    <td class="improvement-indicator">${improvement}x</td>
-                `;
-                tbody.appendChild(row);
-            });
         }
 
         function showResults() {
@@ -461,89 +379,6 @@
 
         function hideResults() {
             document.getElementById('resultsSection').style.display = 'none';
-        }
-
-        function showVisualization() {
-            document.getElementById('visualizationSection').style.display = 'block';
-        }
-
-        function playVisualization() {
-            if (!AdvancedPage.visualizationSteps || AdvancedPage.visualizationSteps.length === 0) return;
-            
-            AdvancedPage.visualizationPlaying = true;
-            const speed = parseInt(document.getElementById('speedRange')?.value || 5);
-            const interval = 1000 / speed;
-            
-            AdvancedPage.visualizationInterval = setInterval(() => {
-                if (AdvancedPage.visualizationStep >= AdvancedPage.visualizationSteps.length) {
-                    pauseVisualization();
-                    return;
-                }
-                
-                renderVisualizationStep(AdvancedPage.visualizationStep);
-                AdvancedPage.visualizationStep++;
-            }, interval);
-        }
-
-        function pauseVisualization() {
-            AdvancedPage.visualizationPlaying = false;
-            if (AdvancedPage.visualizationInterval) {
-                clearInterval(AdvancedPage.visualizationInterval);
-                AdvancedPage.visualizationInterval = null;
-            }
-        }
-
-        function stepVisualization() {
-            if (!AdvancedPage.visualizationSteps || AdvancedPage.visualizationStep >= AdvancedPage.visualizationSteps.length) return;
-            
-            renderVisualizationStep(AdvancedPage.visualizationStep);
-            AdvancedPage.visualizationStep++;
-        }
-
-        function resetVisualization() {
-            pauseVisualization();
-            AdvancedPage.visualizationStep = 0;
-            if (AdvancedPage.currentPuzzle) {
-                renderVisualizationBoard(AdvancedPage.currentPuzzle);
-            }
-        }
-
-        function renderVisualizationStep(step) {
-            if (!visualizationSteps || step >= visualizationSteps.length) return;
-            
-            const stepData = visualizationSteps[step];
-            // This would need to be implemented based on your visualization needs
-            console.log('Visualization step:', stepData);
-        }
-
-        function renderVisualizationBoard(puzzle) {
-            const board = document.getElementById('visualization-board');
-            if (!board) return;
-            
-            board.innerHTML = '';
-            
-            for (let row = 0; row < 9; row++) {
-                for (let col = 0; col < 9; col++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'sudoku-cell';
-                    cell.textContent = puzzle[row][col] || '';
-                    board.appendChild(cell);
-                }
-            }
-        }
-
-        function updateVisualizationSpeed() {
-            const speedRange = document.getElementById('speedRange');
-            const speedValue = document.getElementById('speedValue');
-            
-            if (speedRange && speedValue) {
-                speedValue.textContent = speedRange.value + 'x';
-            }
-            
-            if (AdvancedPage.visualizationPlaying) {
-                pauseVisualization();
-                playVisualization();
-            }
         }
 
         function renderPuzzle() {

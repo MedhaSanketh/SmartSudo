@@ -34,7 +34,7 @@
 
 /* Individual cell styling with modern look */
 .sudoku-cell {
-    width: 100%;
+    
     aspect-ratio: 1/1;
     background-color: var(--bs-dark);
     display: flex;
@@ -161,15 +161,15 @@
 }
 
 .game-controls .btn-primary {
-    background: linear-gradient(to right, var(--smartsudo-primary), var(--bs-primary));
+    background: var(--smartsudo-primary);
 }
 
 .game-controls .btn-info {
-    background: linear-gradient(to right, var(--smartsudo-secondary), var(--bs-info));
+    background: var(--smartsudo-secondary);
 }
 
 .game-controls .btn-success {
-    background: linear-gradient(to right, #38b000, var(--bs-success));
+    background:  #38b000;
 }
 
 /* Visualization styling */
@@ -287,4 +287,9 @@
     #visualization-board {
         max-width: 100%;
     }
+}
+@media (min-width: 992px) {
+  .col-lg-6.override-full {
+    width: 100% !important;
+  }
 }

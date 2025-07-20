@@ -3,16 +3,16 @@ SmartSudo combines traditional puzzle gameplay with AI-powered hints and algorit
 
 # System Architecture
 
-# Frontend Architecture
+1. Frontend Architecture
 - Technology: HTML5, CSS3, JavaScript (ES6+)
 - Framework: Bootstrap 5 with dark theme
 - Structure: Single-page application with modular JavaScript components
   
-# Key Features: Interactive game board, real-time validation, visualization controls
-# Backend Architecture
+2. Key Features: Interactive game board, real-time validation, visualization controls
+3. Backend Architecture
 - Framework: Flask (Python 3.11)
 - Server: Gunicorn WSGI server for production deployment
-# Architecture Pattern: RESTful API with JSON responses
+4. Architecture Pattern: RESTful API with JSON responses
 
 # Key Components
 1. Core Game Engine

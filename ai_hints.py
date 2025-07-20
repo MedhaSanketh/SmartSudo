@@ -1,18 +1,13 @@
-"""
-AI-powered hints for Sudoku puzzles using OpenAI.
-This module provides intelligent hints without solving the entire puzzle.
-"""
 import os
 import random
 
-# Initialize OpenAI client only when API key is available
 client = None
 
 def initialize_openai():
-    """Initialize OpenAI client if API key is available."""
+    
     global client
     try:
-        # Try to get API key from config file first
+        
         try:
             from config import OPENAI_API_KEY
             api_key = OPENAI_API_KEY
@@ -41,11 +36,11 @@ def generate_hint(puzzle, current_state, difficulty):
         A hint object with row, col, and explanation
     """
     try:
-        # Initialize OpenAI if not already done
+        
         if client is None:
             initialize_openai()
         
-        # Find empty cells
+        
         empty_cells = []
         for i in range(9):
             for j in range(9):
@@ -55,13 +50,13 @@ def generate_hint(puzzle, current_state, difficulty):
         if not empty_cells:
             return {"hint_type": "complete", "message": "The puzzle is already complete!"}
         
-        # Find an empty cell that can be solved with current information
+        
         for row in range(9):
             for col in range(9):
                 if current_state[row][col] == 0:
                     valid_nums = get_valid_numbers(current_state, row, col)
                     if len(valid_nums) == 1:
-                        # Found a cell with only one valid number
+                        
                         return {
                             'hint_type': 'straightforward',
                             'row': row,
@@ -70,7 +65,7 @@ def generate_hint(puzzle, current_state, difficulty):
                             'message': f"Cell at row {row+1}, column {col+1} can only be {valid_nums[0]} based on current constraints."
                         }
         
-        # Pick a cell with few possibilities for hint
+        
         best_cell = None
         min_options = 10
         
@@ -85,7 +80,7 @@ def generate_hint(puzzle, current_state, difficulty):
         if best_cell:
             row, col, valid_nums = best_cell
             
-            # If OpenAI is available, use AI hint
+            
             if client:
                 puzzle_str = format_puzzle_for_ai(current_state)
                 hint_context = {
@@ -98,10 +93,10 @@ def generate_hint(puzzle, current_state, difficulty):
                 }
                 return generate_ai_hint(puzzle_str, hint_context, difficulty, valid_nums)
             else:
-                # Fallback to basic hint
+                
                 return generate_basic_hint(row, col, valid_nums)
         
-        # Default fallback hint
+        
         row, col = random.choice(empty_cells)
         valid_nums = get_valid_numbers(current_state, row, col)
         return generate_basic_hint(row, col, valid_nums)
@@ -144,17 +139,17 @@ def get_valid_numbers(grid, row, col):
 
 def is_valid_move(grid, row, col, num):
     """Check if a number is valid in the given position."""
-    # Check row
+    
     for i in range(9):
         if grid[row][i] == num:
             return False
     
-    # Check column
+    
     for i in range(9):
         if grid[i][col] == num:
             return False
     
-    # Check 3x3 box
+
     box_row, box_col = 3 * (row // 3), 3 * (col // 3)
     for i in range(box_row, box_row + 3):
         for j in range(box_col, box_col + 3):
@@ -193,10 +188,10 @@ def generate_ai_hint(puzzle_str, hint_context, difficulty, valid_nums):
         if not client:
             return generate_basic_hint(hint_context["row"] - 1, hint_context["col"] - 1, valid_nums)
             
-        # Adjust the hint complexity based on difficulty
+       
         hint_level = "subtle" if difficulty in ["hard", "expert"] else "medium"
         
-        # Create a prompt for the AI
+        
         prompt = f"""You are a Sudoku expert helping a player. Here's the current state of their Sudoku puzzle:
 
 {puzzle_str}
@@ -214,9 +209,9 @@ The hint should help them understand the Sudoku logic that applies here.
 Return your response in the following JSON format:
 {{"hint_type": "ai", "message": "your hint here", "technique": "the name of the technique"}}"""
 
-        # Call the OpenAI API
+        
         response = client.chat.completions.create(
-            model="gpt-4o",  # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
+            model="gpt-4o",  
             messages=[
                 {"role": "system", "content": "You are a Sudoku expert assistant. Provide hints rather than solutions."},
                 {"role": "user", "content": prompt}
@@ -225,22 +220,22 @@ Return your response in the following JSON format:
             max_tokens=200
         )
         
-        # Extract the hint from the response
+        
         response_content = response.choices[0].message.content
         
-        # Parse the JSON response
+        
         import json
         if response_content is not None:
             hint_data = json.loads(str(response_content))
         else:
             hint_data = {"hint_type": "basic", "message": "Try examining the rows, columns, and boxes for this cell."}
         
-        # Add the cell location to the hint
-        hint_data["row"] = hint_context["row"] - 1  # Convert back to 0-indexed
+        
+        hint_data["row"] = hint_context["row"] - 1  
         hint_data["col"] = hint_context["col"] - 1
         
         return hint_data
         
     except Exception as e:
-        # Fallback to a simpler hint if the AI fails
+        
         return generate_basic_hint(hint_context["row"] - 1, hint_context["col"] - 1, valid_nums)
